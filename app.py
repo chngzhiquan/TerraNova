@@ -78,7 +78,6 @@ def save_new_sighting(date, time, lat, lon, scientific_name, common_name):
 # --- 1. CONFIGURATION ---
 st.set_page_config(page_title="TerraNova", layout="wide", page_icon="🌏")
 make_map_responsive()
-st.title("🌏 TerraNova")
 
 # --- 2. DATA LOAD ---
 @st.cache_data
@@ -108,13 +107,13 @@ with st.sidebar:
     
     # GPS Status Indicator
     if loc:
-        st.success(f"Signal Locked\nLat: {user_lat:.4f}\nLon: {user_lon:.4f}")
+        st.success(f"Signal Locked \nLat: {user_lat:.4f}\nLon: {user_lon:.4f}")
     else:
         st.warning("Signal Searching... (Allow Location)")
 
     st.divider()
     st.subheader("🎙️ Bio-Acoustics")
-    audio_value = st.audio_input("Record audio note")
+    audio_value = st.audio_input("Listen:")
     
     if audio_value:
         st.audio(audio_value)
@@ -124,7 +123,7 @@ with st.sidebar:
 
     st.divider()
     st.subheader("📸 Visual Scanner")
-    img_file = st.camera_input("Scan Animal")
+    img_file = st.camera_input("Scan:")
 
     if img_file:
         st.write("Processing visual data...")
