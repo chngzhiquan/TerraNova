@@ -8,6 +8,32 @@ from mapping_hotspots import update_hotspots
 import os
 from datetime import datetime
 
+def make_map_responsive():
+    st.markdown("""
+        <style>
+            /* 1. Remove the massive white space at the top */
+            .block-container {
+                padding-top: 0rem !important;
+                padding-bottom: 0rem !important;
+                padding-left: 0rem !important;
+                padding-right: 0rem !important;
+                margin: 0px !important;
+                max-width: 100% !important;
+            }
+            
+            /* 2. Hide the default Streamlit header (the colored line) */
+            header {visibility: hidden;}
+            
+            /* 3. Hide the footer */
+            footer {visibility: hidden;}
+            
+            /* 4. Make the map container fill the width */
+            iframe {
+                width: 100% !important;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
 def save_new_sighting(date, time, lat, lon, scientific_name, common_name):
     master_db_file = 'sightings.csv'
     new_id = 1
@@ -51,6 +77,7 @@ def save_new_sighting(date, time, lat, lon, scientific_name, common_name):
 
 # --- 1. CONFIGURATION ---
 st.set_page_config(page_title="TerraNova", layout="wide", page_icon="🌏")
+make_map_responsive()
 st.title("🌏 TerraNova")
 
 # --- 2. DATA LOAD ---
@@ -173,4 +200,4 @@ if not df.empty:
                 tooltip=f"{name} ({sightings} sightings)"
             ).add_to(m)
 
-st_folium(m, height=700, width="100%")
+st_folium(m, height=800, width="100%")
