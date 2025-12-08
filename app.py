@@ -3,7 +3,6 @@ import pandas as pd
 import folium
 from streamlit_folium import st_folium
 from streamlit_js_eval import get_geolocation
-from audio_recorder_streamlit import audio_recorder
 from folium.plugins import LocateControl
 from mapping_hotspots import update_hotspots
 import os
@@ -88,11 +87,10 @@ with st.sidebar:
 
     st.divider()
     st.subheader("🎙️ Bio-Acoustics")
-    st.write("Record surrounding calls:")
-    audio_bytes = audio_recorder(pause_threshold=2.0, icon_size="2x")
+    audio_value = st.audio_input("Record audio note")
     
-    if audio_bytes:
-        st.audio(audio_bytes, format="audio/wav")
+    if audio_value:
+        st.audio(audio_value)
         st.info("Analyzing frequency...")
         # (Placeholder for Audio AI Logic)
         st.write("Potential Match: **Asian Koel** (80%)")
