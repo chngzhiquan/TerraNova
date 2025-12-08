@@ -2,10 +2,13 @@ import streamlit as st
 import pandas as pd
 import folium
 from streamlit_folium import st_folium
+from streamlit_js_eval import get_geolocation
+from audio_recorder_streamlit import audio_recorder
+from folium.plugins import LocateControl
 from geopy.distance import geodesic
 
 # --- 1. CONFIGURATION ---
-st.set_page_config(page_title="Bio-Compass", layout="wide", page_icon="🧭")
+st.set_page_config(page_title="TerraNova", layout="wide", page_icon="🧭")
 st.title("🧬 TerraNova")
 
 # --- 2. DATA LOAD ---
@@ -19,133 +22,112 @@ def load_data():
 
 df = load_data()
 
-# --- 3. GPS SIMULATOR (Sidebar) ---
+# --- 3. GPS data ---
+loc = get_geolocation()
+
+# Default to Singapore (or your data center) if GPS hasn't loaded yet
+user_lat = 1.3521
+user_lon = 103.8198
+
+# Overwrite if we have real GPS data (from streamlit_js_eval)
+if loc:
+    user_lat = loc['coords']['latitude']
+    user_lon = loc['coords']['longitude']
+
 with st.sidebar:
     st.header("📍 Navigation")
     
-    # Determine default start location
-    if not df.empty:
-        default_lat = df.iloc[0]['lat']
-        default_lon = df.iloc[0]['lon']
+    # GPS Status Indicator
+    if loc:
+        st.success(f"Signal Locked\nLat: {user_lat:.4f}\nLon: {user_lon:.4f}")
     else:
-        default_lat = 1.3521
-        default_lon = 103.8198
+        st.warning("Signal Searching... (Allow Location)")
 
-    st.info("Simulate walking by adjusting coordinates:")
-    user_lat = st.number_input("Latitude", value=default_lat, format="%.5f")
-    user_lon = st.number_input("Longitude", value=default_lon - 0.0005, format="%.5f")
-    
     st.divider()
-    st.subheader("📸 Universal Scanner")
-    img_file = st.camera_input("Scan Habitat")
-
-# --- 4. MAP RENDERING ---
-col1, col2 = st.columns([3, 1])
-
-with col1:
-    # Base Map (Dark Mode)
-    m = folium.Map(location=[user_lat, user_lon], zoom_start=18, tiles="CartoDB dark_matter")
+    st.subheader("🎙️ Bio-Acoustics")
+    st.write("Record surrounding calls:")
+    audio_bytes = audio_recorder(pause_threshold=2.0, icon_size="2x")
     
-    # Plot User (Blue Dot)
-    folium.Marker(
-        [user_lat, user_lon], 
-        tooltip="You", 
-        icon=folium.Icon(color="blue", icon="user")
-    ).add_to(m)
-    
-    # Plot Data
-    if not df.empty:
-        for index, row in df.iterrows():
-            
-            # --- CUSTOM ICON LOGIC ---
-            name = str(row['common_name'])
-            
-            if "Junglefowl" in name:
-                icon_name = "fire"       # Represents the Red comb / ground bird
-                icon_color = "red"
-            elif "Myna" in name:
-                icon_name = "volume-up"  # Represents a noisy bird
-                icon_color = "purple"
-            elif "Starling" in name:
-                icon_name = "star"       # Pun on "Star"-ling
-                icon_color = "green"
-            else:
-                icon_name = "leaf"       # Default for others
-                icon_color = "gray"
+    if audio_bytes:
+        st.audio(audio_bytes, format="audio/wav")
+        st.info("Analyzing frequency...")
+        # Placeholder for Audio AI Logic
+        st.write("Potential Match: **Asian Koel** (80%)")
 
-            # --- 1. FIXED RADIUS (No longer dynamic) ---
-            radius = 50
-            
-            # --- 2. DRAW HOME RANGE ---
-            folium.Circle(
-                [row['lat'], row['lon']],
-                radius=radius,
-                color=icon_color,
-                fill=True,
-                fill_opacity=0.2,
-                weight=1,
-                popup=name
-            ).add_to(m)
-            
-            # --- 3. DRAW OBSERVATION POST (PIN) ---
-            sightings = row.get('sighting_count', 0)
-            
-            # Only show pin if verified (>= 3 sightings)
-            if sightings >= 3: 
-                folium.Marker(
-                    [row['lat'], row['lon']],
-                    icon=folium.Icon(color=icon_color, icon=icon_name), # Custom Icon
-                    tooltip=f"{name} ({sightings} sightings)"
-                ).add_to(m)
-
-    st_folium(m, height=500, width="100%")
-
-# --- 5. LOGIC ENGINE (Scanning Analysis) ---
-with col2:
-    st.subheader("📡 Sensor Log")
+    st.divider()
+    st.subheader("📸 Visual Scanner")
+    img_file = st.camera_input("Scan Animal")
 
     if img_file:
-        # --- SIMULATE AI IDENTIFICATION ---
         st.write("Processing visual data...")
-        detected_species = "Red Junglefowl" # Placeholder
-        confidence = "98%"
-        
-        st.success(f"**Identified:** {detected_species}")
-        
-        # --- CALCULATE CONTEXT ---
-        nearest_dist = 99999
-        nearest_name = "Unknown"
-        
-        if not df.empty:
-            for index, row in df.iterrows():
-                dist = geodesic((user_lat, user_lon), (row['lat'], row['lon'])).meters
-                if dist < nearest_dist:
-                    nearest_dist = dist
-                    nearest_name = row['common_name']
-
-        st.divider()
-        
-        # --- DECISION LOGIC ---
-        if nearest_dist < 50:
-            st.info(f"✅ **HABITAT VERIFIED**")
-            st.write(f"Confirmed historical data for **{nearest_name}**.")
-            st.metric("Reward", "+50 XP")
-        else:
+            
+        # (Placeholder for your AI model)
+        identified_species = "Red Junglefowl" 
+            
+        st.success(f"**Identified:**\n### {identified_species}")
+            
+        # -- SAVE BUTTON --
+        # Only appears after a photo is taken
+        if st.button("Confirm & Upload Data", use_container_width=True):
+            #save_new_sighting(user_lat, user_lon, identified_species) # (Placeholder for save function)
             st.balloons()
-            st.warning(f"🚀 **NEW DISCOVERY**")
-            st.write("You are mapping a new zone (Terra Incognita).")
-            st.metric("Reward", "+200 XP (Pioneer Bonus)")
-            
-        with st.expander("Field Guide Unlocked"):
-            st.write("Ranger: 'Excellent data. Adding to global repository.'")
+            st.toast(f"Saved {identified_species} to database!")
+            st.rerun()
 
-    else:
-        st.write("Waiting for input...")
-        if not df.empty:
-            nearest_dist = 99999
-            for index, row in df.iterrows():
-                dist = geodesic((user_lat, user_lon), (row['lat'], row['lon'])).meters
-                if dist < nearest_dist:
-                    nearest_dist = dist
+# --- 4. MAP RENDERING ---
+# Base Map (Dark Mode)
+m = folium.Map(location=[user_lat, user_lon], zoom_start=18, tiles="CartoDB dark_matter")
+    
+# This enables the "Google Maps" style blue dot to track the user
+LocateControl(
+    auto_start=True,
+    strings={"title": "My Location"},
+    flyTo=True
+).add_to(m)
+    
+# Plot Data
+if not df.empty:
+    for index, row in df.iterrows():
             
-            st.metric("Nearest Outpost", f"{int(nearest_dist)}m")
+    # --- CUSTOM ICON LOGIC ---
+        name = str(row['common_name'])
+            
+        if "Junglefowl" in name:
+            icon_name = "fire"       # Represents the Red comb / ground bird
+            icon_color = "red"
+        elif "Myna" in name:
+            icon_name = "volume-up"  # Represents a noisy bird
+            icon_color = "purple"
+        elif "Starling" in name:
+            icon_name = "star"       # Pun on "Star"-ling
+            icon_color = "green"
+        else:
+            icon_name = "leaf"       # Default for others
+            icon_color = "gray"
+
+        # --- 1. FIXED RADIUS (No longer dynamic) ---
+        radius = 50
+            
+        # --- 2. DRAW HOME RANGE ---
+        folium.Circle(
+            [row['lat'], row['lon']],
+            radius=radius,
+            color=icon_color,
+            fill=True,
+            fill_opacity=0.2,
+            weight=1,
+            popup=name
+        ).add_to(m)
+            
+        # --- 3. DRAW OBSERVATION POST (PIN) ---
+        sightings = row.get('sighting_count', 0)
+            
+        # Only show pin if verified (>= 3 sightings)
+        if sightings >= 3: 
+            folium.Marker(
+                [row['lat'], row['lon']],
+                icon=folium.Icon(color=icon_color, icon=icon_name), # Custom Icon
+                tooltip=f"{name} ({sightings} sightings)"
+            ).add_to(m)
+
+st_folium(m, height=700, width="100%")
