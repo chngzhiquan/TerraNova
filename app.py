@@ -112,8 +112,8 @@ with st.sidebar:
         # -- SAVE BUTTON --
         # Only appears after a photo is taken
         if st.button("Confirm & Upload Data", use_container_width=True):
-            #date = datetime.now().strftime("%Y-%m-%d")
-            #time = datetime.now().strftime("%H:%M:%S")
+            date = datetime.now().strftime("%d/%m/%Y")
+            time = datetime.now().strftime("%H:%M:%S")
             #save_new_sighting(date, time, lat, lon, scientific_name, common_name) # (Placeholder for save function)
             st.balloons()
             st.toast(f"Saved {common_name} to database!")
