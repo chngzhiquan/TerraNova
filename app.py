@@ -21,8 +21,11 @@ def make_map_responsive():
                 max-width: 100% !important;
             }
             
-            /* 2. Hide the default Streamlit header (the colored line) */
-            header {visibility: hidden;}
+            /* 2. This keeps the "Hamburger" menu visible but removes the white bar */
+            header[data-testid="stHeader"] {
+                background-color: transparent !important;
+                z-index: 1; /* Force it to stay on top of the map */
+            }
             
             /* 3. Hide the footer */
             footer {visibility: hidden;}
@@ -199,4 +202,4 @@ if not df.empty:
                 tooltip=f"{name} ({sightings} sightings)"
             ).add_to(m)
 
-st_folium(m, height=800, width="100%")
+st_folium(m, height=700, width="100%")
