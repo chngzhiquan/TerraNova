@@ -5,11 +5,54 @@ from streamlit_folium import st_folium
 from streamlit_js_eval import get_geolocation
 from audio_recorder_streamlit import audio_recorder
 from folium.plugins import LocateControl
-from geopy.distance import geodesic
+from mapping_hotspots import update_hotspots
+import os
+from datetime import datetime
+
+def save_new_sighting(date, time, lat, lon, scientific_name, common_name):
+    master_db_file = 'sightings.csv'
+    new_id = 1
+    if os.path.exists(master_db_file):
+        try:
+            existing_df = pd.read_csv(master_db_file)
+            if not existing_df.empty:
+                new_id = existing_df['id'].max() + 1
+        except ValueError:
+            pass  # File exists but is empty or malformed
+        except pd.errors.EmptyDataError:
+            pass  # File exists but is empty
+
+    # 1. Prepare the new row
+    new_data = pd.DataFrame({
+        'id': [new_id],
+        'date_observed': [date],
+        'time_observed': [time],
+        'latitude': [lat],
+        'longitude': [lon],
+        'scientific_name': [scientific_name],
+        'common_name': [common_name]
+    })
+
+    # 2. Append to CSV
+    # mode='a' means append
+    # header=False means don't write the column names again if file exists
+    if os.path.exists(master_db_file):
+        new_data.to_csv(master_db_file, mode='a', header=False, index=False)
+    else:
+        # If file doesn't exist, create it with headers
+        new_data.to_csv(master_db_file, mode='w', header=True, index=False)
+
+    # 3. Trigger the Pipeline
+    st.toast("Processing new hotspot data...")
+    try:
+        update_hotspots() # Runs the external script
+        st.success("Map Updated!")
+    except Exception as e:
+        st.error(f"Pipeline Error: {e}")
 
 # --- 1. CONFIGURATION ---
-st.set_page_config(page_title="TerraNova", layout="wide", page_icon="🧭")
-st.title("🧬 TerraNova")
+st.set_page_config(page_title="TerraNova", layout="wide", page_icon="🌏")
+st.title("🌏 TerraNova")
 
 # --- 2. DATA LOAD ---
 @st.cache_data
@@ -51,7 +94,7 @@ with st.sidebar:
     if audio_bytes:
         st.audio(audio_bytes, format="audio/wav")
         st.info("Analyzing frequency...")
-        # Placeholder for Audio AI Logic
+        # (Placeholder for Audio AI Logic)
         st.write("Potential Match: **Asian Koel** (80%)")
 
     st.divider()
@@ -62,16 +105,18 @@ with st.sidebar:
         st.write("Processing visual data...")
             
         # (Placeholder for your AI model)
-        identified_species = "Red Junglefowl" 
+        common_name = "Red Junglefowl" 
             
-        st.success(f"**Identified:**\n### {identified_species}")
+        st.success(f"**Identified:**\n### {common_name}")
             
         # -- SAVE BUTTON --
         # Only appears after a photo is taken
         if st.button("Confirm & Upload Data", use_container_width=True):
-            #save_new_sighting(user_lat, user_lon, identified_species) # (Placeholder for save function)
+            #date = datetime.now().strftime("%Y-%m-%d")
+            #time = datetime.now().strftime("%H:%M:%S")
+            #save_new_sighting(date, time, lat, lon, scientific_name, common_name) # (Placeholder for save function)
             st.balloons()
-            st.toast(f"Saved {identified_species} to database!")
+            st.toast(f"Saved {common_name} to database!")
             st.rerun()
 
 # --- 4. MAP RENDERING ---
