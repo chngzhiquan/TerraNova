@@ -6,7 +6,7 @@ from geopy.distance import geodesic
 
 # --- 1. CONFIGURATION ---
 st.set_page_config(page_title="Bio-Compass", layout="wide", page_icon="🧭")
-st.title("🧬 Bio-Compass: Field Scanner")
+st.title("🧬 TerraNova")
 
 # --- 2. DATA LOAD ---
 @st.cache_data
