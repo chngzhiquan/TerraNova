@@ -11,7 +11,7 @@ from transformers import pipeline
 def load_audio_model():
     # This downloads a specific model trained on bird sounds
     # You can swap this string for other huggingface models
-    model_id = "dima806/bird_species_classification" 
+    model_id = "dima806/bird_sounds_classification" 
     pipe = pipeline("audio-classification", model=model_id)
     return pipe
 
