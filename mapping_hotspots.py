@@ -2,7 +2,7 @@ import pandas as pd
 
 def update_hotspots():
     print("🔄 Processing raw data...")
-    df = pd.read_csv('species_db.csv') 
+    df = pd.read_csv('sightings.csv') 
     print(f"   - Found {len(df)} raw sightings.")
 
     # 2. THE GRID ALGORITHM
@@ -12,8 +12,7 @@ def update_hotspots():
     df['lon_grid'] = df['longitude'].round(3)
 
     # 3. AGGREGATE (Count sightings per grid)
-    # We group by Species + Grid Location
-    # We also keep the 'icon', 'base_color', 'active_start' to use in the app later
+    # We group by common name + grid coordinates
     hotspots = df.groupby(
         ['common_name', 'lat_grid', 'lon_grid']
     ).size().reset_index(name='sighting_count')

@@ -7,6 +7,8 @@ from folium.plugins import LocateControl
 from mapping_hotspots import update_hotspots
 import os
 from datetime import datetime
+import matplotlib.pyplot as plt
+from audio_processor import create_spectrogram, identify_bird_sound
 
 def make_map_responsive():
     st.markdown("""
@@ -120,9 +122,35 @@ with st.sidebar:
     
     if audio_value:
         st.audio(audio_value)
-        st.info("Analyzing frequency...")
-        # (Placeholder for Audio AI Logic)
-        st.write("Potential Match: **Asian Koel** (80%)")
+        temp_filename = "temp_recording.wav"
+        with open(temp_filename, "wb") as f:
+            f.write(audio_value.read())
+        
+        st.info("Generating Spectrogram...")
+        
+        try:
+            fig = create_spectrogram(temp_filename)
+            st.pyplot(fig) # Displays the matplotlib chart
+            plt.close(fig) # Clean up memory
+        except Exception as e:
+            st.error(f"Could not generate visual: {e}")
+        st.write("Identifying bird species...")
+        try:
+            all_matches = identify_bird_sound(temp_filename)
+            high_confidence_matches = [m for m in all_matches if m['score'] >= 70]
+            if high_confidence_matches:
+                st.success(f"**{len(high_confidence_matches)} Species Identified:**")
+                for bird in high_confidence_matches:
+                    with st.container():
+                        # Create a visually distinct card for each bird
+                        st.markdown(f"### ✅ {bird['name']}")
+                        st.progress(int(bird['score']))
+                        st.caption(f"Confidence: {bird['score']:.1f}%")
+                        st.divider() 
+            else:
+                st.warning("No target species detected above 70% confidence.")               
+        except Exception as e:
+            st.error(f"AI Error: {e}")           
 
     st.divider()
     st.subheader("📸 Visual Scanner")
@@ -194,7 +222,7 @@ if not df.empty:
         # --- 3. DRAW OBSERVATION POST (PIN) ---
         sightings = row.get('sighting_count', 0)
             
-        # Only show pin if verified (>= 3 sightings)
+        # Only show pin if verified (>= 3 sightings). Will probably be changed to a different logic later.
         if sightings >= 3: 
             folium.Marker(
                 [row['lat'], row['lon']],
