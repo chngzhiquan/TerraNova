@@ -1,52 +1,50 @@
-import librosa
-import librosa.display
-import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
-from transformers import pipeline
+from birdnetlib import Recording
+from birdnetlib.analyzer import Analyzer
+from datetime import datetime
 
 # 1. CACHED MODEL LOADING
 # We use st.cache_resource so we don't download the 500MB AI model every time you click record
 @st.cache_resource(show_spinner=False)
 def load_audio_model():
-    # This downloads a specific model trained on bird sounds
-    # You can swap this string for other huggingface models
-    model_id = "dima806/bird_sounds_classification" 
-    pipe = pipeline("audio-classification", model=model_id)
-    return pipe
+    # This initializes the BirdNet Analyzer
+    analyzer = Analyzer()
+    return analyzer
 
-# 2. GENERATE SPECTROGRAM
-def create_spectrogram(audio_file):
-    # Load audio (Librosa automatically converts to mono and correct sample rate)
-    y, sr = librosa.load(audio_file)
-    
-    # Create the Mel Spectrogram (The "Image" of sound)
-    S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128)
-    S_dB_mel = librosa.power_to_db(S, ref=np.max)
-    
-    # Plot it using Matplotlib
-    fig, ax = plt.subplots(figsize=(10, 4))
-    img = librosa.display.specshow(S_dB_mel, x_axis='time', y_axis='mel', sr=sr, ax=ax, cmap='inferno')
-    fig.colorbar(img, ax=ax, format='%+2.0f dB')
-    ax.set_title('Audio Spectrogram')
-    plt.tight_layout()
-    
-    return fig
-
-# 3. IDENTIFY SPECIES
+# 2. IDENTIFY SPECIES (BirdNET)
 def identify_bird_sound(audio_file):
-    pipe = load_audio_model()
-    target_species = ["Red Junglefowl", "Common Myna", "Asian Glossy Starling"]
-    raw_predictions = pipe(audio_file, top_k=10)
+    # Retrieve the cached analyzer
+    analyzer = load_audio_model()
+    
+    # This is BirdNET's "Superpower": It filters out non-native birds automatically.
+    recording = Recording(
+        analyzer,
+        audio_file,
+        lat=1.3521,       # Singapore Latitude
+        lon=103.8198,     # Singapore Longitude
+        date=datetime.now(), # Helps filter migratory birds based on season
+        min_conf=0.5,     # Sensitivity (0.5 is a good balance)
+    )
+    
+    # Run the analysis
+    recording.analyze()
+    
+    # Format results for the App
+    # We convert BirdNET's format to our standard list: [{'name': 'Koel', 'score': 95.0}, ...]
     valid_matches = []
     
-    for p in raw_predictions:
-        score_pct = p['score'] * 100
-        for target in target_species:
-            if target.lower() in p['label'].lower():
-                valid_matches.append({
-                    'name': p['label'],
-                    'score': score_pct
-                })
-                break                     
+    if recording.detections:
+        for d in recording.detections:
+            # BirdNET returns confidence as 0.0-1.0, we convert to 0-100
+            score_pct = d['confidence'] * 100
+            
+            valid_matches.append({
+                'name': d['common_name'],
+                'score': score_pct
+            })
+            
+    # Sort by highest confidence first
+    valid_matches.sort(key=lambda x: x['score'], reverse=True)
+            
     return valid_matches

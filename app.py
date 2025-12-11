@@ -4,11 +4,11 @@ import folium
 from streamlit_folium import st_folium
 from streamlit_js_eval import get_geolocation
 from folium.plugins import LocateControl
-from mapping_hotspots import update_hotspots
-import os
 from datetime import datetime
-import matplotlib.pyplot as plt
-from audio_processor import create_spectrogram, identify_bird_sound, load_audio_model
+import os
+
+from mapping_hotspots import update_hotspots
+from audio_processor import identify_bird_sound, load_audio_model
 
 def make_map_responsive():
     st.markdown("""
@@ -39,7 +39,7 @@ def make_map_responsive():
         </style>
         """, unsafe_allow_html=True)
 
-def save_new_sighting(date, time, lat, lon, scientific_name, common_name):
+def save_new_sighting(date, time, lat, lon, common_name):
     master_db_file = 'sightings.csv'
     new_id = 1
     if os.path.exists(master_db_file):
@@ -59,17 +59,13 @@ def save_new_sighting(date, time, lat, lon, scientific_name, common_name):
         'time_observed': [time],
         'latitude': [lat],
         'longitude': [lon],
-        'scientific_name': [scientific_name],
         'common_name': [common_name]
     })
 
     # 2. Append to CSV
-    # mode='a' means append
-    # header=False means don't write the column names again if file exists
     if os.path.exists(master_db_file):
         new_data.to_csv(master_db_file, mode='a', header=False, index=False)
     else:
-        # If file doesn't exist, create it with headers
         new_data.to_csv(master_db_file, mode='w', header=True, index=False)
 
     # 3. Trigger the Pipeline
@@ -83,6 +79,8 @@ def save_new_sighting(date, time, lat, lon, scientific_name, common_name):
 # --- 1. CONFIGURATION ---
 st.set_page_config(page_title="TerraNova", layout="wide", page_icon="🌏")
 make_map_responsive()
+
+# PRE-LOAD BIRDNET
 with st.spinner("Loading Audio Model..."):
     try:
         load_audio_model()
@@ -134,28 +132,22 @@ with st.sidebar:
         st.info("Generating Spectrogram...")
         
         try:
-            fig = create_spectrogram(temp_filename)
-            st.pyplot(fig) # Displays the matplotlib chart
-            plt.close(fig) # Clean up memory
-        except Exception as e:
-            st.error(f"Could not generate visual: {e}")
-        st.write("Identifying bird species...")
-        try:
-            all_matches = identify_bird_sound(temp_filename)
-            high_confidence_matches = [m for m in all_matches if m['score'] >= 70]
-            if high_confidence_matches:
-                st.success(f"**{len(high_confidence_matches)} Species Identified:**")
-                for bird in high_confidence_matches:
+            matches = identify_bird_sound(temp_filename)
+            
+            if matches:
+                st.success(f"**{len(matches)} Species Identified:**")
+                for bird in matches:
                     with st.container():
-                        # Create a visually distinct card for each bird
                         st.markdown(f"### ✅ {bird['name']}")
                         st.progress(int(bird['score']))
                         st.caption(f"Confidence: {bird['score']:.1f}%")
-                        st.divider() 
+                        st.divider()
             else:
-                st.warning("No target species detected above 70% confidence.")               
+                st.warning("No clear bird calls detected.")
+                st.caption("BirdNET filters out non-Singaporean birds automatically.")
+                                 
         except Exception as e:
-            st.error(f"AI Error: {e}")           
+            st.error(f"AI Error: {e}")         
 
     st.divider()
     st.subheader("📸 Visual Scanner")
