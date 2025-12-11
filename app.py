@@ -127,10 +127,7 @@ with st.sidebar:
         st.audio(audio_value)
         temp_filename = "temp_recording.wav"
         with open(temp_filename, "wb") as f:
-            f.write(audio_value.read())
-        
-        st.info("Generating Spectrogram...")
-        
+            f.write(audio_value.read())        
         try:
             matches = identify_bird_sound(temp_filename)
             
