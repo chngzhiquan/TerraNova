@@ -7,7 +7,7 @@ from PIL import Image
 MODEL_ID = "dennisjooo/Birds-Classifier-EfficientNetB2"
 
 # Default test image (Change this to a real filename you have!)
-DEFAULT_IMAGE = "test_image.jpg" 
+DEFAULT_IMAGE = "test_image2.jpg" 
 
 def test_visual_ai(image_path):
     print(f"👁️  Loading Vision Model: {MODEL_ID}...")

@@ -5,7 +5,7 @@ from PIL import Image
 # --- CONFIGURATION ---
 # The Generalist Google Model
 MODEL_ID = "google/vit-base-patch16-224"
-DEFAULT_IMAGE = "test_image.jpg"
+DEFAULT_IMAGE = "test_image2.jpg"
 
 def test_raw_vision(image_path):
     print(f"👁️  Loading Raw Model: {MODEL_ID}...")
