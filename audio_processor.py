@@ -7,7 +7,7 @@ from transformers import pipeline
 
 # 1. CACHED MODEL LOADING
 # We use st.cache_resource so we don't download the 500MB AI model every time you click record
-@st.cache_resource
+@st.cache_resource(show_spinner=False)
 def load_audio_model():
     # This downloads a specific model trained on bird sounds
     # You can swap this string for other huggingface models

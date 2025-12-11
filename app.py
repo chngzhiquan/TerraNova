@@ -8,7 +8,7 @@ from mapping_hotspots import update_hotspots
 import os
 from datetime import datetime
 import matplotlib.pyplot as plt
-from audio_processor import create_spectrogram, identify_bird_sound
+from audio_processor import create_spectrogram, identify_bird_sound, load_audio_model
 
 def make_map_responsive():
     st.markdown("""
@@ -83,6 +83,11 @@ def save_new_sighting(date, time, lat, lon, scientific_name, common_name):
 # --- 1. CONFIGURATION ---
 st.set_page_config(page_title="TerraNova", layout="wide", page_icon="🌏")
 make_map_responsive()
+with st.spinner("Loading Audio Model..."):
+    try:
+        load_audio_model()
+    except Exception as e:
+        st.error(f"Audio Model Load Error: {e}")
 
 # --- 2. DATA LOAD ---
 @st.cache_data
