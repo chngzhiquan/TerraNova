@@ -6,7 +6,7 @@ from birdnetlib.analyzer import Analyzer
 
 # --- CONFIGURATION ---
 # Use an existing file to test
-TEST_FILE = "test_recording.mp3" 
+TEST_FILE = "test_audio.mp3" 
 
 def test_birdnet_ai(file_path):
     print(f"🎧 Loading BirdNET Analyzer...")
