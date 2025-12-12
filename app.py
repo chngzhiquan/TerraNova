@@ -9,6 +9,7 @@ import os
 
 from mapping_hotspots import update_hotspots
 from audio_processor import identify_bird_sound, load_audio_model
+from image_processor import identify_bird_image, load_image_model
 
 def make_map_responsive():
     st.markdown("""
@@ -80,12 +81,13 @@ def save_new_sighting(date, time, lat, lon, common_name):
 st.set_page_config(page_title="TerraNova", layout="wide", page_icon="🌏")
 make_map_responsive()
 
-# PRE-LOAD BIRDNET
-with st.spinner("Loading Audio Model..."):
+# PRE-LOAD AI MODELS
+with st.spinner("Loading AI Models..."):
     try:
         load_audio_model()
+        load_image_model()
     except Exception as e:
-        st.error(f"Audio Model Load Error: {e}")
+        st.error(f"Model Load Error: {e}")
 
 # --- 2. DATA LOAD ---
 @st.cache_data
@@ -98,10 +100,8 @@ def load_data():
 
 df = load_data()
 
-# --- 3. GPS data ---
+# --- 3. GPS data --- (Default to Singapore center)
 loc = get_geolocation()
-
-# Default to Singapore (or your data center) if GPS hasn't loaded yet
 user_lat = 1.3521
 user_lon = 103.8198
 
@@ -152,27 +152,32 @@ with st.sidebar:
 
     if img_file:
         st.write("Processing visual data...")
-            
-        # (Placeholder for your AI model)
-        common_name = "Red Junglefowl" 
-            
-        st.success(f"**Identified:**\n### {common_name}")
-            
-        # -- SAVE BUTTON --
-        # Only appears after a photo is taken
-        if st.button("Confirm & Upload Data", use_container_width=True):
-            date = datetime.now().strftime("%d/%m/%Y")
-            time = datetime.now().strftime("%H:%M:%S")
-            #save_new_sighting(date, time, lat, lon, scientific_name, common_name) # (Placeholder for save function)
-            st.balloons()
-            st.toast(f"Saved {common_name} to database!")
-            st.rerun()
+        try:
+            results = identify_bird_image(img_file)
+            top_match = results[0]
+            common_name = top_match['name']
+            confidence = top_match['score']
+            if confidence >= 50:
+                st.success(f"**Identified:**\n### {common_name}")
+                st.progress(int(confidence))
+                st.caption(f"Confidence: {confidence:.1f}%")
+                # -- SAVE BUTTON --
+                if st.button("Confirm & Upload Data", use_container_width=True):
+                    date = datetime.now().strftime("%d/%m/%Y")
+                    time = datetime.now().strftime("%H:%M:%S")
+                    save_new_sighting(date, time, user_lat, user_lon, common_name)
+                    st.balloons()
+                    st.toast(f"Saved {common_name} to database!")
+                    st.rerun()
+            else:
+                st.warning("Image Unclear.")
+                st.caption(f"Best guess: {common_name} ({confidence:.1f}%)")
+        except Exception as e:
+            st.error(f"Visual AI Error: {e}")
 
 # --- 4. MAP RENDERING ---
 # Base Map (Dark Mode)
 m = folium.Map(location=[user_lat, user_lon], zoom_start=18, tiles="CartoDB dark_matter")
-    
-# This enables the "Google Maps" style blue dot to track the user
 LocateControl(
     auto_start=True,
     strings={"title": "My Location"},
