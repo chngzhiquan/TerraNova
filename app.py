@@ -144,7 +144,7 @@ with st.sidebar:
                 st.caption("BirdNET filters out non-Singaporean birds automatically.")
                                  
         except Exception as e:
-            st.error(f"AI Error: {e}")         
+            st.error(f"Audio AI Error: {e}")         
 
     st.divider()
     st.subheader("📸 Visual Scanner")
