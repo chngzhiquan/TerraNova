@@ -138,7 +138,6 @@ with st.sidebar:
                         st.markdown(f"### ✅ {bird['name']}")
                         st.progress(int(bird['score']))
                         st.caption(f"Confidence: {bird['score']:.1f}%")
-                        st.divider()
             else:
                 st.warning("No clear bird calls detected.")
                 st.caption("BirdNET filters out non-Singaporean birds automatically.")
