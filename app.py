@@ -77,6 +77,24 @@ def save_new_sighting(date, time, lat, lon, common_name):
     except Exception as e:
         st.error(f"Pipeline Error: {e}")
 
+def check_login(username, password):
+    try:
+        # Read the pre-made CSV from your repo
+        users_df = pd.read_csv('users.csv')
+        
+        # Check if username exists
+        user_match = users_df[users_df['username'] == username]
+        
+        if not user_match.empty:
+            # Check if password matches (In real life, use hashing!)
+            stored_password = str(user_match.iloc[0]['password'])
+            if str(password) == stored_password:
+                return True
+        return False
+    except FileNotFoundError:
+        st.error("System Error: users.csv not found.")
+        return False
+
 # --- 1. CONFIGURATION ---
 st.set_page_config(page_title="TerraNova", layout="wide", page_icon="🌏")
 make_map_responsive()
@@ -88,6 +106,34 @@ with st.spinner("Loading AI Models..."):
         load_image_model()
     except Exception as e:
         st.error(f"Model Load Error: {e}")
+
+# --- SESSION STATE INITIALIZATION ---
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
+    st.session_state['user'] = None
+
+# --- LOGIN SCREEN ---
+if not st.session_state['logged_in']:
+    st.title("🔐 TerraNova Access")
+    
+    with st.form("login_form"):
+        user = st.text_input("Username")
+        pwd = st.text_input("Password", type="password")
+        submit = st.form_submit_button("Login")
+        
+        if submit:
+            if check_login(user, pwd):
+                st.session_state['logged_in'] = True
+                st.session_state['user'] = user
+                st.success("Access Granted")
+                st.rerun()
+            else:
+                st.error("Invalid credentials.")
+    
+    st.info("Note: Account creation is disabled for this demo.")
+    st.stop() # Stops the rest of the app from running
+
+st.sidebar.success(f"User: {st.session_state['user']}")
 
 # --- 2. DATA LOAD ---
 @st.cache_data
