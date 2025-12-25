@@ -19,6 +19,11 @@ if 'logged_in' not in st.session_state:
 
 # --- LOGIN SCREEN ---
 if not st.session_state['logged_in']:
+    st.markdown("""
+                <style>
+                    [data-testid="stSidebar"] { display: none; }
+                </style>
+                """, unsafe_allow_html=True)
     st.title("🌏 TerraNova Login")
     with st.form("login_form"):
         user = st.text_input("Username")
