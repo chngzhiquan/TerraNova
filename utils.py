@@ -50,7 +50,7 @@ def make_map_responsive():
     """, unsafe_allow_html=True)
 
 # --- 3. DATABASE MANAGEMENT ---
-def save_new_sighting(date, time, lat, lon, common_name):
+def save_new_sighting(date, time, lat, lon, common_name,username):
     master_db_file = 'sightings.csv'
     new_id = 1
     
@@ -66,7 +66,7 @@ def save_new_sighting(date, time, lat, lon, common_name):
     # Prepare new row
     new_data = pd.DataFrame({
         'id': [new_id], 'date_observed': [date], 'time_observed': [time],
-        'latitude': [lat], 'longitude': [lon], 'common_name': [common_name]
+        'latitude': [lat], 'longitude': [lon], 'common_name': [common_name], 'username':[username]
     })
 
     # Append to CSV
