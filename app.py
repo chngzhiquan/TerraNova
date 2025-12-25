@@ -114,7 +114,7 @@ if 'logged_in' not in st.session_state:
 
 # --- LOGIN SCREEN ---
 if not st.session_state['logged_in']:
-    st.title("🔐 TerraNova Access")
+    st.title("🌏 TerraNova Login")
     
     with st.form("login_form"):
         user = st.text_input("Username")
