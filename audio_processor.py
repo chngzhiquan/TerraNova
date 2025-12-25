@@ -31,12 +31,12 @@ def identify_bird_sound(audio_file):
     recording.analyze()
     
     # Format results for the App
-    # We convert BirdNET's format to our standard list: [{'name': 'Koel', 'score': 95.0}, ...]
+    # Convert BirdNET's format to our standard list: [{'name': 'Koel', 'score': 95.0}, ...]
     valid_matches = []
     
     if recording.detections:
         for d in recording.detections:
-            # BirdNET returns confidence as 0.0-1.0, we convert to 0-100
+            # BirdNET returns confidence as 0.0-1.0
             score_pct = d['confidence'] * 100
             
             valid_matches.append({
