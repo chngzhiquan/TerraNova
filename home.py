@@ -54,7 +54,7 @@ def load_geodata():
     )
 
     # 2. Load Park Boundaries (Polygon)
-    park_path = os.path.join("data", "parks.geojson")
+    park_path = "parks.geojson"
     
     if os.path.exists(park_path):
         try:
@@ -135,7 +135,7 @@ if show_parks and gdf_parks is not None:
             'fillOpacity': 0.3,
         },
         # Adjust 'name' if your shapefile uses a different column header (e.g. 'LU_DESC')
-        tooltip=folium.GeoJsonTooltip(fields=['name'], aliases=['Park:']) 
+        tooltip=folium.GeoJsonTooltip(fields=['NAME'], aliases=['Park Name:']) 
     ).add_to(m)
 
 # Layer 2: Birds
