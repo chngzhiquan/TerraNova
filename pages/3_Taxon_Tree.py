@@ -7,15 +7,21 @@ st.set_page_config(page_title="The Game", page_icon="🎮")
 
 st.title("🎮 Guess The Bird")
 
-# --- Load Data ---
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-csv_path = os.path.join(parent_dir, 'herons.csv')
-df = pd.read_csv(csv_path)
-
 # --- Session State Management ---
 if 'data' not in st.session_state:
-    st.session_state.data = utils.load_data()
+    # 1. LOAD DATA (Using your new code)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(current_dir)
+    csv_path = os.path.join(parent_dir, 'herons.csv')
+    
+    # Check if file exists to prevent crashing
+    if os.path.exists(csv_path):
+        st.session_state.data = pd.read_csv(csv_path)
+    else:
+        st.error(f"❌ File not found at: {csv_path}")
+        st.stop()
+
+    # 2. INITIALIZE GAME STATE
     st.session_state.df_remaining = st.session_state.data.copy()
     st.session_state.asked_features = []
     st.session_state.game_over = False
@@ -46,10 +52,15 @@ if not st.session_state.game_over:
 
     # Ask Question
     else:
-        # Progress Bar (Visual Flair)
+        # Progress Bar
         total_birds = len(st.session_state.data)
         current_birds = len(st.session_state.df_remaining)
-        confidence = 1.0 - (current_birds / total_birds)
+        # Avoid division by zero if data is empty
+        if total_birds > 0:
+            confidence = 1.0 - (current_birds / total_birds)
+        else:
+            confidence = 0.0
+            
         st.progress(confidence, text=f"Confidence: {int(confidence*100)}%")
 
         # Get best question from utils
@@ -87,8 +98,12 @@ else:
     
     # Display Details
     c1, c2 = st.columns(2)
-    c1.info(f"**Habitat:** {bird['Habitat_Context']}")
-    c2.info(f"**Key Feature:** {bird['Special_Feature']}")
+    # Check if columns exist before displaying to avoid errors
+    habitat = bird['Habitat_Context'] if 'Habitat_Context' in bird else 'Unknown'
+    special = bird['Special_Feature'] if 'Special_Feature' in bird else 'None'
+
+    c1.info(f"**Habitat:** {habitat}")
+    c2.info(f"**Key Feature:** {special}")
     
     if st.button("Play Again", type="primary"):
         reset_game()

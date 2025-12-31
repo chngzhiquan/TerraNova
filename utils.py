@@ -1,46 +1,10 @@
 import streamlit as st
 import pandas as pd
-import pandas as np
+import numpy as np
 import io
 import os
 
-# --- 1. DATA PIPELINE (Formerly mapping_hotspots.py) ---
-def update_hotspots():
-    # This runs the logic to aggregate raw sightings into grid squares
-    print("🔄 Processing raw data...")
-    try:
-        df = pd.read_csv('sightings.csv') 
-        print(f"   - Found {len(df)} raw sightings.")
-
-        # GRID ALGORITHM: Rounding to 3 decimal places (approx 110m)
-        df['lat_grid'] = df['latitude'].round(3)
-        df['lon_grid'] = df['longitude'].round(3)
-
-        # AGGREGATE: Group by Species + Grid
-        hotspots = df.groupby(
-            ['common_name', 'lat_grid', 'lon_grid']
-        ).size().reset_index(name='sighting_count')
-
-        # FILTER: Only keep verified hotspots (>= 3 sightings)
-        verified_hotspots = hotspots[hotspots['sighting_count'] >= 3].copy()
-        
-        # FORMAT: Rename back to lat/lon for the map
-        verified_hotspots.rename(columns={'lat_grid': 'lat', 'lon_grid': 'lon'}, inplace=True)
-
-        # SAVE
-        output_file = 'final_hotspots.csv'
-        verified_hotspots.to_csv(output_file, index=False)  
-        print(f"✅ Hotspots updated! ({len(verified_hotspots)} verified locations)")
-        return True
-        
-    except FileNotFoundError:
-        print("⚠️ No sightings.csv found yet.")
-        return False
-    except Exception as e:
-        print(f"❌ Pipeline Error: {e}")
-        return False
-
-# --- 2. CSS STYLING ---
+# --- CSS STYLING ---
 def make_map_responsive():
     st.markdown("""
         <style>
@@ -51,7 +15,7 @@ def make_map_responsive():
         </style>
     """, unsafe_allow_html=True)
 
-# --- 3. DATABASE MANAGEMENT ---
+# --- DATABASE MANAGEMENT ---
 def save_new_sighting(date, time, lat, lon, common_name,username):
     master_db_file = 'sightings.csv'
     new_id = 1
@@ -77,18 +41,7 @@ def save_new_sighting(date, time, lat, lon, common_name,username):
     else:
         new_data.to_csv(master_db_file, mode='w', header=True, index=False)
 
-    # TRIGGER THE PIPELINE IMMEDIATELY
-    st.toast("Processing new hotspot data...")
-    try:
-        success = update_hotspots() # Calling the function directly
-        if success:
-            st.success("Map Updated!")
-        else:
-            st.warning("Data saved, but map update skipped (no data yet).")
-    except Exception as e:
-        st.error(f"Pipeline Error: {e}")
-
-# --- 4. LOGIN LOGIC ---
+# ---  LOGIN LOGIC ---
 def check_login(username, password):
     try:
         users_df = pd.read_csv('users.csv')
@@ -102,7 +55,7 @@ def check_login(username, password):
         st.error("System Error: users.csv not found.")
         return False
 
-# --- 5. ENTROPY ---
+# --- ENTROPY CALCULATION ---
 def calculate_entropy(df):
     """Returns the entropy (uncertainty) of the current list of birds."""
     if len(df) == 0: return 0
@@ -145,7 +98,3 @@ def get_best_question(df, considered_features):
                 best_question = (col, val)
 
     return best_question
-
-# Allow running this file directly to fix the map manually
-if __name__ == "__main__":
-    update_hotspots()
