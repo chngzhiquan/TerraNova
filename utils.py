@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import pandas as np
+import io
 import os
 
 # --- 1. DATA PIPELINE (Formerly mapping_hotspots.py) ---
@@ -99,6 +101,50 @@ def check_login(username, password):
     except FileNotFoundError:
         st.error("System Error: users.csv not found.")
         return False
+
+# --- 5. ENTROPY ---
+def calculate_entropy(df):
+    """Returns the entropy (uncertainty) of the current list of birds."""
+    if len(df) == 0: return 0
+    probs = df['Species'].value_counts() / len(df)
+    return -np.sum(probs * np.log2(probs))
+
+def get_best_question(df, considered_features):
+    """
+    Finds the specific Question (Feature + Value) that best splits the data 50/50.
+    Example: 'Is Primary_Color == White?' might split the data 4 vs 7.
+    """
+    base_entropy = calculate_entropy(df)
+    best_info_gain = -1
+    best_question = None # Will store tuple: (Feature_Column, Value_To_Ask)
+
+    # Columns we can ask about (exclude Species and Special_Feature usually)
+    askable_columns = [col for col in df.columns if col not in ['Species', 'Special_Feature'] and col not in considered_features]
+
+    for col in askable_columns:
+        unique_values = df[col].unique()
+        
+        for val in unique_values:
+            # Simulate the split: What if user says YES? What if user says NO?
+            yes_subset = df[df[col] == val]
+            no_subset = df[df[col] != val]
+            
+            # Calculate Weighted Entropy of this split
+            weight_yes = len(yes_subset) / len(df)
+            weight_no = len(no_subset) / len(df)
+            
+            new_entropy = (weight_yes * calculate_entropy(yes_subset)) + \
+                          (weight_no * calculate_entropy(no_subset))
+            
+            info_gain = base_entropy - new_entropy
+            
+            # We prefer splits that are balanced (close to 0.5/0.5 probability)
+            # This logic finds the highest information gain
+            if info_gain > best_info_gain:
+                best_info_gain = info_gain
+                best_question = (col, val)
+
+    return best_question
 
 # Allow running this file directly to fix the map manually
 if __name__ == "__main__":
